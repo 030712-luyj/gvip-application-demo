@@ -1,5 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
+import PdfPreview from './PdfPreview.vue'
+import { exportPdf } from '../utils/exportPdf'
 import { useApplicationForm } from '../utils/useApplicationForm'
 
 const {
@@ -21,21 +23,65 @@ const {
   organizationTypeOptions,
   persistDraft,
   progressPercent,
+  resetApplicationForm,
   removePreviousProgram,
   removePhotoFile,
   removeWorkExperience,
   setPhotoFile,
+  validateFinalExport,
   visaOptions,
 } = useApplicationForm()
 
 const photoInput = ref(null)
+const exportPreviewRef = ref(null)
+const showPreview = ref(false)
 const organizationIntroductionCount = computed(() => formData.organizationIntroduction.length)
 const applicationMotivationCount = computed(() => formData.otherInfo.applicationMotivation.length)
 const developmentGoalsCount = computed(() => formData.otherInfo.developmentGoals.length)
 const achievementsCount = computed(() => formData.otherInfo.achievements.length)
+const signatureErrors = computed(() => errors.signature || {})
+const isFinalStep = computed(() => currentStepIndex.value === applicationSteps.length - 1)
 const primaryButtonLabel = computed(() =>
-  currentStepIndex.value === applicationSteps.length - 1 ? '完成' : '下一步',
+  isFinalStep.value ? '导出 PDF' : '下一步',
 )
+const stageCompletionItems = computed(() => [
+  {
+    title: '基本信息',
+    completed: Boolean(
+      formData.personalInfo.cnName.trim() &&
+        formData.personalInfo.mobilePhone.trim() &&
+        formData.personalInfo.email.trim() &&
+        formData.personalInfo.email.includes('@'),
+    ),
+  },
+  {
+    title: '工作背景',
+    completed: Boolean(
+      formData.professionalInfo.position.trim() &&
+        formData.professionalInfo.organizationNameCn.trim() &&
+        formData.industryInfo.industryNumber &&
+        formData.organizationIntroduction.trim(),
+    ),
+  },
+  {
+    title: '其他信息',
+    completed: Boolean(
+      formData.otherInfo.applicationMotivation.trim() &&
+        formData.otherInfo.developmentGoals.trim() &&
+        formData.otherInfo.achievements.trim(),
+    ),
+  },
+  {
+    title: '签名确认',
+    completed: Boolean(
+      formData.signature.confidentialityConfirmed &&
+        formData.signature.declarationConfirmed &&
+        formData.signature.applicantSignature.trim() &&
+        formData.signature.applicationDate &&
+        formData.signature.finalConfirmed,
+    ),
+  },
+])
 
 const triggerPhotoPicker = () => {
   photoInput.value?.click()
@@ -51,6 +97,69 @@ const handleRemovePhoto = () => {
   if (photoInput.value) {
     photoInput.value.value = ''
   }
+}
+
+const buildPdfFileName = () => {
+  const applicantName = formData.personalInfo.cnName.trim() || '未填写姓名'
+  const applicationDate = formData.signature.applicationDate || new Date().toISOString().slice(0, 10)
+  const safeName = applicantName.replace(/[\\/:*?"<>|]/g, '_')
+
+  return `GVIP报名表_${safeName}_${applicationDate}.pdf`
+}
+
+const handlePreview = () => {
+  showPreview.value = true
+  notice.value = {
+    type: 'success',
+    message: '已展开报名表预览，可先检查四个阶段内容。',
+  }
+}
+
+const handleExport = async () => {
+  showPreview.value = true
+
+  if (!validateFinalExport()) {
+    return
+  }
+
+  await nextTick()
+
+  if (!exportPreviewRef.value) {
+    notice.value = {
+      type: 'error',
+      message: 'PDF 预览区域尚未准备完成，请稍后重试。',
+    }
+    return
+  }
+
+  try {
+    await exportPdf({
+      element: exportPreviewRef.value,
+      fileName: buildPdfFileName(),
+    })
+
+    persistDraft('签名确认已保存，并已开始导出 PDF。')
+  } catch (error) {
+    console.error(error)
+    notice.value = {
+      type: 'error',
+      message: '导出 PDF 失败，请稍后重试。',
+    }
+  }
+}
+
+const handlePrimaryAction = () => {
+  if (isFinalStep.value) {
+    handleExport()
+    return
+  }
+
+  goToNextStep()
+}
+
+const handleClearDraft = () => {
+  showPreview.value = false
+  resetApplicationForm()
 }
 </script>
 
@@ -966,13 +1075,174 @@ const handleRemovePhoto = () => {
         </section>
       </template>
 
-      <section v-else class="gvip-demo-mobile-card gvip-demo-stage-card">
-        <div class="gvip-demo-mobile-card__heading">
-          <h2>签名确认</h2>
-          <p>Signature Page</p>
+      <template v-else>
+        <section class="gvip-demo-mobile-card gvip-demo-stage-card">
+          <div class="gvip-demo-mobile-card__heading">
+            <h2>保密说明</h2>
+            <p>Confidentiality Notice</p>
+          </div>
+          <div class="gvip-demo-signature-copy gvip-demo-signature-copy--mobile">
+            <p>
+              您填写提交的报名资料将由招生办公室负责翻译发送至哥伦比亚大学商学院高管教育进行审核，我们确保，对以上您提供的个人信息严格保密。
+            </p>
+            <p>
+              Your application materials will be translated by the admissions office and submitted
+              to Columbia Business School Executive Education for evaluation. All personal
+              information provided will be treated with strict confidentiality.
+            </p>
+          </div>
+          <label class="gvip-demo-check-card gvip-demo-check-card--mobile" :class="{ 'is-error': signatureErrors.confidentialityConfirmed }">
+            <input
+              v-model="formData.signature.confidentialityConfirmed"
+              type="checkbox"
+            />
+            <span>我已阅读并理解以上保密说明。</span>
+          </label>
+          <small v-if="signatureErrors.confidentialityConfirmed" class="gvip-demo-error-text">
+            {{ signatureErrors.confidentialityConfirmed }}
+          </small>
+        </section>
+
+        <section class="gvip-demo-mobile-card gvip-demo-stage-card">
+          <div class="gvip-demo-mobile-card__heading">
+            <h2>申请人声明</h2>
+            <p>Applicant Declaration</p>
+          </div>
+          <div class="gvip-demo-signature-copy gvip-demo-signature-copy--mobile">
+            <p>
+              本人谨此声明：我所提交的所有资料信息均真实可靠完整。我同意在必要的情况下提交原件以确认我的报名资格。报名表中个人自述完全由我本人完成，并愿对因虚假资料导致的申请失败或学籍的取消承担全部责任。
+            </p>
+            <p>我理解并同意报名材料归项目办公室所有，无论录取与否均不退回。</p>
+            <p>
+              I certify that all information and materials submitted in this application are true,
+              accurate, and complete. I understand that original documentation may be requested to
+              verify my eligibility. I confirm that the personal statement included in this
+              application has been completed independently by me.
+            </p>
+            <p>
+              I further understand and agree that all application materials submitted become the
+              property of the program office and will not be returned, regardless of the admission
+              decision.
+            </p>
+          </div>
+          <label class="gvip-demo-check-card gvip-demo-check-card--mobile" :class="{ 'is-error': signatureErrors.declarationConfirmed }">
+            <input
+              v-model="formData.signature.declarationConfirmed"
+              type="checkbox"
+            />
+            <span>我已阅读并同意以上申请人声明。</span>
+          </label>
+          <small v-if="signatureErrors.declarationConfirmed" class="gvip-demo-error-text">
+            {{ signatureErrors.declarationConfirmed }}
+          </small>
+        </section>
+
+        <section class="gvip-demo-mobile-card gvip-demo-stage-card">
+          <div class="gvip-demo-mobile-card__heading">
+            <h2>电子签名</h2>
+            <p>Electronic Signature</p>
+          </div>
+          <div class="gvip-demo-field">
+            <label>
+              申请人签名 Signature <span class="gvip-demo-required">*</span>
+            </label>
+            <input
+              v-model="formData.signature.applicantSignature"
+              type="text"
+              class="gvip-demo-input"
+              :class="{ 'is-error': signatureErrors.applicantSignature }"
+              placeholder="请输入申请人姓名作为电子签名"
+            />
+            <small v-if="signatureErrors.applicantSignature" class="gvip-demo-error-text">
+              {{ signatureErrors.applicantSignature }}
+            </small>
+          </div>
+          <div class="gvip-demo-field">
+            <label>
+              申请日期 Date <span class="gvip-demo-required">*</span>
+            </label>
+            <input
+              v-model="formData.signature.applicationDate"
+              type="date"
+              class="gvip-demo-input"
+              :class="{ 'is-error': signatureErrors.applicationDate }"
+            />
+            <small v-if="signatureErrors.applicationDate" class="gvip-demo-error-text">
+              {{ signatureErrors.applicationDate }}
+            </small>
+          </div>
+          <div class="gvip-demo-field">
+            <label class="gvip-demo-check-card gvip-demo-check-card--mobile" :class="{ 'is-error': signatureErrors.finalConfirmed }">
+              <input
+                v-model="formData.signature.finalConfirmed"
+                type="checkbox"
+              />
+              <span>我确认以上所有报名信息真实、准确、完整，并确认提交本次报名申请。</span>
+            </label>
+            <small v-if="signatureErrors.finalConfirmed" class="gvip-demo-error-text">
+              {{ signatureErrors.finalConfirmed }}
+            </small>
+          </div>
+        </section>
+
+        <section class="gvip-demo-mobile-card gvip-demo-stage-card">
+          <div class="gvip-demo-mobile-card__heading">
+            <h2>提交与导出</h2>
+            <p>Review & Export</p>
+          </div>
+
+          <div class="gvip-demo-review-status-list gvip-demo-review-status-list--mobile">
+            <div
+              v-for="item in stageCompletionItems"
+              :key="item.title"
+              class="gvip-demo-review-status-item"
+            >
+              <span>{{ item.title }}</span>
+              <strong :class="item.completed ? 'is-complete' : 'is-pending'">
+                {{ item.completed ? '已填写' : '待完善' }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="gvip-demo-review-actions gvip-demo-review-actions--mobile">
+            <button
+              type="button"
+              class="gvip-demo-action-button gvip-demo-action-button--dark"
+              @click="persistDraft('第四阶段草稿已保存。')"
+            >
+              保存草稿
+            </button>
+            <button
+              type="button"
+              class="gvip-demo-action-button gvip-demo-action-button--outline"
+              @click="handlePreview"
+            >
+              预览报名表
+            </button>
+            <button
+              type="button"
+              class="gvip-demo-action-button gvip-demo-action-button--ghost"
+              @click="handleClearDraft"
+            >
+              清空草稿
+            </button>
+          </div>
+
+          <section v-if="showPreview" class="gvip-demo-signature-preview-panel gvip-demo-signature-preview-panel--mobile">
+            <div class="gvip-demo-mobile-card__heading">
+              <h2>报名表预览</h2>
+              <p>PDF Preview</p>
+            </div>
+            <PdfPreview :form-data="formData" :industry-options="industryOptions" />
+          </section>
+        </section>
+
+        <div class="gvip-demo-pdf-export-surface" aria-hidden="true">
+          <div ref="exportPreviewRef">
+            <PdfPreview :form-data="formData" :industry-options="industryOptions" />
+          </div>
         </div>
-        <p class="gvip-demo-stage-card__text">第四阶段暂不继续开发，当前仅保留阶段入口与整体布局。</p>
-      </section>
+      </template>
     </main>
 
     <footer class="gvip-demo-mobile-footer">
@@ -987,14 +1257,14 @@ const handleRemovePhoto = () => {
       <button
         type="button"
         class="gvip-demo-mobile-footer__button gvip-demo-mobile-footer__button--secondary"
-        @click="persistDraft()"
+        @click="persistDraft(isFinalStep ? '签名确认草稿已保存。' : '草稿已保存。')"
       >
         保存草稿
       </button>
       <button
         type="button"
         class="gvip-demo-mobile-footer__button gvip-demo-mobile-footer__button--primary"
-        @click="goToNextStep"
+        @click="handlePrimaryAction"
       >
         {{ primaryButtonLabel }}
       </button>

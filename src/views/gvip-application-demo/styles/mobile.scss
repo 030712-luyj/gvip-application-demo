@@ -201,6 +201,28 @@
   width: 100%;
 }
 
+.gvip-demo-check-card--mobile {
+  padding: 16px;
+}
+
+.gvip-demo-signature-copy--mobile {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.gvip-demo-review-status-list--mobile {
+  grid-template-columns: 1fr;
+}
+
+.gvip-demo-review-actions--mobile {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.gvip-demo-signature-preview-panel--mobile {
+  padding-top: 8px;
+}
+
 .progress-track {
   width: 100%;
   height: 8px;
@@ -227,5 +249,14 @@
 
   .gvip-demo-stage-card__placeholder {
     min-height: 150px;
+  }
+
+  .gvip-demo-mobile-footer {
+    gap: 10px;
+  }
+
+  .gvip-demo-mobile-footer__button {
+    min-height: 50px;
+    font-size: 14px;
   }
 }
