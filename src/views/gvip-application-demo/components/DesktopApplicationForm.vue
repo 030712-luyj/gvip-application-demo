@@ -1,7 +1,7 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, ref } from 'vue'
 import PdfPreview from './PdfPreview.vue'
-import { exportPdf } from '../utils/exportPdf'
+import { exportFilledGvipPdf } from '../utils/fillPdfTemplate'
 import { useApplicationForm } from '../utils/useApplicationForm'
 
 const {
@@ -34,8 +34,8 @@ const {
 } = useApplicationForm()
 
 const photoInput = ref(null)
-const exportPreviewRef = ref(null)
 const showPreview = ref(false)
+const exportError = ref('')
 const currentStepNumber = computed(() => currentStepIndex.value + 1)
 const progressRingStyle = computed(() => ({
   background: `conic-gradient(#d6b06d ${progressPercent.value}%, rgba(255, 255, 255, 0.12) ${progressPercent.value}% 100%)`,
@@ -47,7 +47,7 @@ const achievementsCount = computed(() => formData.otherInfo.achievements.length)
 const signatureErrors = computed(() => errors.signature || {})
 const isFinalStep = computed(() => currentStepIndex.value === applicationSteps.length - 1)
 const navPrimaryLabel = computed(() =>
-  isFinalStep.value ? '完成并导出 PDF' : '继续下一步',
+  '继续下一步',
 )
 const stageCompletionItems = computed(() => [
   {
@@ -104,61 +104,51 @@ const handleRemovePhoto = () => {
   }
 }
 
-const buildPdfFileName = () => {
+const buildTemplatePdfFileName = () => {
   const applicantName = formData.personalInfo.cnName.trim() || '未填写姓名'
-  const applicationDate = formData.signature.applicationDate || new Date().toISOString().slice(0, 10)
   const safeName = applicantName.replace(/[\\/:*?"<>|]/g, '_')
 
-  return `GVIP报名表_${safeName}_${applicationDate}.pdf`
+  return `GVIP报名表_${safeName}_原版模板.pdf`
 }
 
 const handlePreview = () => {
+  exportError.value = ''
   showPreview.value = true
   notice.value = {
     type: 'success',
-    message: '已展开报名表预览，可检查四个阶段内容后再导出 PDF。',
+    message: '已展开报名表预览，可检查四个阶段内容。',
   }
 }
 
-const handleExport = async () => {
-  showPreview.value = true
+const handleTemplatePdfExport = async () => {
+  console.info('[GVIP TEMPLATE PDF] clicked')
+  console.info('[GVIP TEMPLATE PDF] formData', formData)
+
+  exportError.value = ''
 
   if (!validateFinalExport()) {
     return
   }
 
-  await nextTick()
-
-  if (!exportPreviewRef.value) {
-    notice.value = {
-      type: 'error',
-      message: 'PDF 预览区域尚未准备完成，请稍后重试。',
-    }
-    return
-  }
-
   try {
-    await exportPdf({
-      element: exportPreviewRef.value,
-      fileName: buildPdfFileName(),
+    await exportFilledGvipPdf({
+      formData,
+      fileName: buildTemplatePdfFileName(),
     })
 
-    persistDraft('签名确认已保存，并已开始导出 PDF。')
+    persistDraft('原版模板 PDF 已开始导出。')
   } catch (error) {
     console.error(error)
+    console.error('[GVIP TEMPLATE PDF] export failed', error)
+    exportError.value = error?.message || '导出 PDF 失败，请检查模板和字体文件'
     notice.value = {
       type: 'error',
-      message: '导出 PDF 失败，请稍后重试。',
+      message: exportError.value,
     }
   }
 }
 
 const handlePrimaryAction = () => {
-  if (isFinalStep.value) {
-    handleExport()
-    return
-  }
-
   goToNextStep()
 }
 
@@ -191,6 +181,7 @@ const handleClearDraft = () => {
           保存草稿
         </button>
         <button
+          v-if="!isFinalStep"
           type="button"
           class="gvip-demo-nav-button gvip-demo-nav-button--gold"
           @click="handlePrimaryAction"
@@ -1382,7 +1373,7 @@ const handleClearDraft = () => {
                 <button
                   type="button"
                   class="gvip-demo-action-button gvip-demo-action-button--gold"
-                  @click="handleExport"
+                  @click="handleTemplatePdfExport"
                 >
                   导出 PDF
                 </button>
@@ -1405,11 +1396,6 @@ const handleClearDraft = () => {
             </article>
           </section>
 
-          <div class="gvip-demo-pdf-export-surface" aria-hidden="true">
-            <div ref="exportPreviewRef">
-              <PdfPreview :form-data="formData" :industry-options="industryOptions" />
-            </div>
-          </div>
         </template>
       </section>
     </main>
