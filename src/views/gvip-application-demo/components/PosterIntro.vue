@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import iphoneBanner from '../assets/iphone_banner.png'
+import rightIcon from '../assets/right_icon.svg'
 
 const props = defineProps({
   isDesktop: {
@@ -13,7 +15,7 @@ defineEmits(['next'])
 const posterStyle = computed(() => ({
   backgroundImage: props.isDesktop
     ? 'url("/posters/poster-desktop.jpg")'
-    : 'url("/posters/poster-mobile.png")',
+    : `url("${iphoneBanner}")`,
 }))
 </script>
 
@@ -28,10 +30,14 @@ const posterStyle = computed(() => ({
   >
     <div class="gvip-demo-poster__overlay"></div>
 
-    <div class="gvip-demo-poster__actions">
-      <button type="button" class="gvip-demo-poster__button" @click="$emit('next')">
+    <div class="gvip-demo-poster__actions gvip-demo-poster-start-wrap">
+      <button
+        type="button"
+        class="gvip-demo-poster__button gvip-demo-poster-start"
+        @click="$emit('next')"
+      >
         <span>开始申请</span>
-        <span class="gvip-demo-poster__arrow" aria-hidden="true">→</span>
+        <img :src="rightIcon" alt="" aria-hidden="true" class="gvip-demo-poster-start-icon" />
       </button>
     </div>
   </section>

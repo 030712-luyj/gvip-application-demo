@@ -154,7 +154,7 @@ const handleClearDraft = () => {
 </script>
 
 <template>
-  <div class="gvip-demo gvip-demo--mobile">
+  <div class="gvip-demo gvip-demo--mobile gvip-demo-mobile-page">
     <header class="gvip-demo-mobile-header">
       <div class="gvip-demo-mobile-header__row">
         <div>
@@ -171,7 +171,7 @@ const handleClearDraft = () => {
       </div>
     </header>
 
-    <main class="gvip-demo-mobile-content">
+    <main class="gvip-demo-mobile-content gvip-demo-mobile-scroll">
       <section
         v-if="notice.message"
         class="gvip-demo-inline-notice"

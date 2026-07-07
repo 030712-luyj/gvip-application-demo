@@ -38,7 +38,7 @@ const showPreview = ref(false)
 const exportError = ref('')
 const currentStepNumber = computed(() => currentStepIndex.value + 1)
 const progressRingStyle = computed(() => ({
-  background: `conic-gradient(#d6b06d ${progressPercent.value}%, rgba(255, 255, 255, 0.12) ${progressPercent.value}% 100%)`,
+  '--gvip-progress': progressPercent.value,
 }))
 const organizationIntroductionCount = computed(() => formData.organizationIntroduction.length)
 const applicationMotivationCount = computed(() => formData.otherInfo.applicationMotivation.length)
