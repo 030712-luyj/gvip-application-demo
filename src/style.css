@@ -1,0 +1,59 @@
+:root {
+  --gvip-blue: #0b4f7a;
+  --gvip-dark: #0b2f45;
+  --gvip-light-bg: #f5f7fa;
+  --gvip-border: #d6e0e8;
+  --gvip-text: #1f2d3d;
+  --gvip-muted: #6b7b88;
+  --gvip-card: #ffffff;
+  --gvip-shadow: 0 18px 40px rgba(11, 47, 69, 0.08);
+  --gvip-radius-lg: 24px;
+  --gvip-radius-md: 18px;
+  --gvip-radius-sm: 12px;
+  --gvip-transition: 0.24s ease;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--gvip-text);
+  background:
+    radial-gradient(circle at top left, rgba(11, 79, 122, 0.12), transparent 34%),
+    linear-gradient(180deg, #eef4f8 0%, #f8fafc 55%, #edf3f7 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-width: 320px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
