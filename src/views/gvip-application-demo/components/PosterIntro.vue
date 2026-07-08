@@ -14,7 +14,7 @@ defineEmits(['next'])
 
 const posterStyle = computed(() => ({
   backgroundImage: props.isDesktop
-    ? 'url("/posters/poster-desktop.jpg")'
+    ? 'url("/posters/web-banner.png")'
     : `url("${iphoneBanner}")`,
 }))
 </script>

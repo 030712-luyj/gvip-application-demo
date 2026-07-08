@@ -866,34 +866,14 @@
   height: 90px;
   padding: 8px;
   border-radius: 50%;
-  --gvip-progress-angle: calc((var(--gvip-progress) * 3.6deg) - 90deg);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(220, 234, 245, 0.12), rgba(220, 234, 245, 0.01) 62%),
-    conic-gradient(
-      from -90deg,
-      #67b7e8 0deg,
-      #5eb2e1 calc(var(--gvip-progress) * 2.7deg),
-      #d6b06a calc(var(--gvip-progress) * 3.6deg),
-      rgba(255, 255, 255, 0.14) calc(var(--gvip-progress) * 3.6deg),
-      rgba(255, 255, 255, 0.14) 360deg
-    );
   background:
     radial-gradient(circle at center, rgba(7, 28, 49, 0.18), rgba(7, 28, 49, 0.02) 68%),
-    conic-gradient(
-      from -90deg,
-      #67b7e8 0deg,
-      #5eb2e1 calc(var(--gvip-progress) * 2.7deg),
-      #d6b06a calc(var(--gvip-progress) * 3.6deg),
-      rgba(255, 255, 255, 0.14) calc(var(--gvip-progress) * 3.6deg),
-      rgba(255, 255, 255, 0.14) 360deg
-    );
+    linear-gradient(180deg, rgba(220, 234, 245, 0.04), rgba(7, 28, 49, 0.12));
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     0 12px 24px rgba(4, 17, 27, 0.12),
     0 0 22px rgba(86, 181, 233, 0.12);
-  transition:
-    --gvip-progress 0.82s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.4s ease;
+  transition: box-shadow 0.4s ease;
 }
 
 .gvip-demo-progress-ring::before {
@@ -910,25 +890,37 @@
   pointer-events: none;
 }
 
-.gvip-demo-progress-ring::after {
-  content: '';
+.gvip-demo-progress-ring__svg {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.34), transparent 38%),
-    linear-gradient(135deg, #9fd4f1, #d6b06a);
-  box-shadow:
-    0 0 14px rgba(86, 181, 233, 0.18),
-    0 0 6px rgba(214, 176, 106, 0.14);
-  transform: translate(-50%, -50%) rotate(var(--gvip-progress-angle)) translateY(-39px);
-  transition: transform 0.82s cubic-bezier(0.22, 1, 0.36, 1);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.gvip-demo-progress-ring__track,
+.gvip-demo-progress-ring__value {
+  fill: none;
+  stroke-width: 8;
+}
+
+.gvip-demo-progress-ring__track {
+  stroke: rgba(255, 255, 255, 0.14);
+}
+
+.gvip-demo-progress-ring__value {
+  stroke: url(#gvip-progress-ring-gradient);
+  stroke-linecap: round;
+  stroke-dasharray: var(--gvip-ring-length);
+  stroke-dashoffset: var(--gvip-ring-offset);
+  transition: stroke-dashoffset 0.82s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 0 8px rgba(86, 181, 233, 0.18));
 }
 
 .gvip-demo-progress-ring__inner {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -939,7 +931,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 0 18px rgba(101, 183, 232, 0.16);

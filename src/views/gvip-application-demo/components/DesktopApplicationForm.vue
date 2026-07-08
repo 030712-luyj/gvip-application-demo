@@ -4,6 +4,9 @@ import PdfPreview from './PdfPreview.vue'
 import { exportFilledGvipPdf } from '../utils/fillPdfTemplate'
 import { useApplicationForm } from '../utils/useApplicationForm'
 
+const PROGRESS_RING_RADIUS = 42
+const PROGRESS_RING_CIRCUMFERENCE = 2 * Math.PI * PROGRESS_RING_RADIUS
+
 const {
   addPreviousProgram,
   addWorkExperience,
@@ -38,7 +41,8 @@ const showPreview = ref(false)
 const exportError = ref('')
 const currentStepNumber = computed(() => currentStepIndex.value + 1)
 const progressRingStyle = computed(() => ({
-  '--gvip-progress': progressPercent.value,
+  '--gvip-ring-length': `${PROGRESS_RING_CIRCUMFERENCE}`,
+  '--gvip-ring-offset': `${PROGRESS_RING_CIRCUMFERENCE * (1 - progressPercent.value / 100)}`,
 }))
 const organizationIntroductionCount = computed(() => formData.organizationIntroduction.length)
 const applicationMotivationCount = computed(() => formData.otherInfo.applicationMotivation.length)
@@ -239,6 +243,17 @@ const handleClearDraft = () => {
 
           <div class="gvip-demo-hero-banner__progress">
             <div class="gvip-demo-progress-ring" :style="progressRingStyle">
+              <svg class="gvip-demo-progress-ring__svg" viewBox="0 0 100 100" aria-hidden="true">
+                <defs>
+                  <linearGradient id="gvip-progress-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#67b7e8" />
+                    <stop offset="68%" stop-color="#5eb2e1" />
+                    <stop offset="100%" stop-color="#d6b06a" />
+                  </linearGradient>
+                </defs>
+                <circle class="gvip-demo-progress-ring__track" cx="50" cy="50" r="42" />
+                <circle class="gvip-demo-progress-ring__value" cx="50" cy="50" r="42" />
+              </svg>
               <div class="gvip-demo-progress-ring__inner">{{ progressPercent }}%</div>
             </div>
             <p>Step {{ currentStepNumber }} / {{ applicationSteps.length }}</p>
